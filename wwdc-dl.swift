@@ -78,7 +78,7 @@ for argument : NSString in dashedArguments {
     let key = argument.substringFromIndex(1)
     let value : AnyObject? = NSUserDefaults.standardUserDefaults().valueForKey(key)
     let valueString = value as? String
-    // print("    \(argument) \(value)")
+    // print("    \(key) \(value)")
     
     if key == "f" && valueString == "HD" {
         isVideoResolutionHD = true

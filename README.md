@@ -4,6 +4,8 @@ This helps to download WWDC 2016 videos and PDF easily.
 
 Built with Swift scripts!
 
+(_No error handling in this quick hack at 4am_)
+
 
 ## Usage
   
@@ -32,4 +34,4 @@ By default, the script will download the SD video and PDF in your `~/Documents/W
   
 ## Playground
   
-The script is written in Playground environment for convenience. It makes a copy to `wwdc-dl.swift`.
+The script is written in Playground environment, for convenience. Edit in Playground, then make a copy to `wwdc-dl.swift` with `copy.sh`.
