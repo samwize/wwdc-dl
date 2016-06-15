@@ -6,15 +6,12 @@ Built with Swift scripts!
 
 
 ## Usage
-
-Note: The script is in Playground for convenience.
   
-  // So get it there
-  cd wwdc-dl-Playground.playground
-  chmod +x Contents.swift
+  // Main script executable first
+  chmod +x wwdc-dl.swift
   
   // Run it
-  ./Contents.swift -s 102,402
+  ./wwdc-dl.swift -s 102,402
   
 That will download session 102 and 402. 
 
@@ -24,11 +21,15 @@ By default, the script will download the SD video and PDF in your `~/Documents/W
 ## Advanced Usage
 
   // HD video
-  ./Contents.swift -s 102 -f HD
+  ./wwdc-dl.swift -s 102 -f HD
   
   // Wants PDF only (no video)
-  ./Contents.swift -s 102 --pdfonly
+  ./wwdc-dl.swift -s 102 --pdfonly
   
   // For some reason you don't want PDF
-  ./Contents.swift -s 102 --nopdf
+  ./wwdc-dl.swift -s 102 --nopdf
   
+  
+## Playground
+  
+The script is written in Playground environment for convenience. It makes a copy to `wwdc-dl.swift`.
