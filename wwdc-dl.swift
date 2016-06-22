@@ -34,47 +34,58 @@ func matchesForRegexInText(regex: String!, text: String!) -> [String] {
 
 // http://stackoverflow.com/a/30106868/242682
 class HttpDownloader {
-    class func loadFileSync(url: NSURL, completion:(path:String, error:NSError!) -> Void) {
+    class func loadFileSync(url: NSURL, completion:(path: String, error: NSError!) -> Void) {
         let documentsUrl =  NSFileManager.defaultManager().URLsForDirectory(.DocumentDirectory, inDomains: .UserDomainMask).first!
         
         let wwdcDirectoryUrl = documentsUrl.URLByAppendingPathComponent("WWDC-2016")
-        createWWDCDirectory(wwdcDirectoryUrl)
-
         let destinationUrl = wwdcDirectoryUrl.URLByAppendingPathComponent(url.lastPathComponent!)
-        if NSFileManager().fileExistsAtPath(destinationUrl.path!) {
-            print("file already exists [\(destinationUrl.path!)]")
-            completion(path: destinationUrl.path!, error:nil)
-        } else if let dataFromURL = NSData(contentsOfURL: url){
-            
-            if dataFromURL.writeToURL(destinationUrl, atomically: true) {
-                // print("file saved [\(destinationUrl.path!)]")
-                completion(path: destinationUrl.path!, error:nil)
-            } else {
-                print("error saving file")
-                let error = NSError(domain:"Error saving file", code:1001, userInfo:nil)
-                completion(path: destinationUrl.path!, error:error)
-            }
-        } else {
-            let error = NSError(domain:"Error downloading file", code:1002, userInfo:nil)
-            completion(path: destinationUrl.path!, error:error)
+
+        guard createWWDCDirectory(wwdcDirectoryUrl) else {
+            let error = NSError(domain:"Cannot create WWDC directory", code:804, userInfo:nil)
+            completion(path: destinationUrl.path!, error: error)
+            return
+        }
+
+        guard NSFileManager().fileExistsAtPath(destinationUrl.path!) == false else {
+            let error = NSError(domain:"File already exists", code:801, userInfo:nil)
+            completion(path: destinationUrl.path!, error: error)
+            return
         }
         
+        guard let dataFromURL = NSData(contentsOfURL: url) else {
+            let error = NSError(domain:"Error downloading file", code:802, userInfo:nil)
+            completion(path: destinationUrl.path!, error: error)
+            return
+        }
+        
+        if dataFromURL.writeToURL(destinationUrl, atomically: true) {
+            completion(path: destinationUrl.path!, error:nil)
+        } else {
+            let error = NSError(domain:"Error saving file", code:803, userInfo:nil)
+            completion(path: destinationUrl.path!, error:error)
+        }
     }
 
-    class func createWWDCDirectory(directory: NSURL) {
+    class func createWWDCDirectory(directory: NSURL) -> Bool {
         if NSFileManager.defaultManager().fileExistsAtPath(directory.path!) == false {
             do {
                 try NSFileManager.defaultManager().createDirectoryAtURL(directory, withIntermediateDirectories: true, attributes: nil)
+                return true
             } catch let error as NSError {
                 print("Error creating WWDC-2016 directory in Documents: \(error.localizedDescription)")
             }
+            return false
         }
+        return true
     }
 }
 
 func downloadSession(sessionId: String, wantsPDF: Bool, wantsPDFOnly: Bool, isVideoResolutionHD: Bool) {
     let playPageUrl = "https://developer.apple.com/videos/play/wwdc2016/\(sessionId)/"
-    let playPageHtml = htmlPage(withURL: playPageUrl)
+    guard let playPageHtml = htmlPage(withURL: playPageUrl) else {
+        print("Cannot read the HTML page: \(playPageUrl)")
+        return
+    }
     
     // Examples:
     // http://devstreaming.apple.com/videos/wwdc/2016/802z6j79sd7g5drr7k7/802/802_hd_designing_for_tvos.mp4
@@ -85,7 +96,7 @@ func downloadSession(sessionId: String, wantsPDF: Bool, wantsPDFOnly: Bool, isVi
     let regexPDF = "http://devstreaming.apple.com/videos/wwdc/2016/\(sessionId).*/\(sessionId)/\(sessionId)_.*.pdf"
     
     if wantsPDF {
-        let matchesPDF = matchesForRegexInText(regexPDF, text: playPageHtml!)
+        let matchesPDF = matchesForRegexInText(regexPDF, text: playPageHtml)
         
         if matchesPDF.count > 0 {
             let urlPDF = NSURL(string: matchesPDF[0])
@@ -95,21 +106,21 @@ func downloadSession(sessionId: String, wantsPDF: Bool, wantsPDFOnly: Bool, isVi
                 })
             }
         } else {
-            print("Cannot find PDF")
+            print("Cannot find PDF for session")
         }
     }
     
     if wantsPDFOnly == false {
         var urlVideo: NSURL?
         if isVideoResolutionHD {
-            let matchesHD = matchesForRegexInText(regexHD, text: playPageHtml!)
+            let matchesHD = matchesForRegexInText(regexHD, text: playPageHtml)
             if matchesHD.count > 0 {
                 urlVideo = NSURL(string: matchesHD[0])
             } else {
                 print("Cannot find HD Video")
             }
         } else {
-            let matchesSD = matchesForRegexInText(regexSD, text: playPageHtml!)
+            let matchesSD = matchesForRegexInText(regexSD, text: playPageHtml)
             if matchesSD.count > 0 {
                 urlVideo = NSURL(string: matchesSD[0])
             } else {
@@ -144,21 +155,21 @@ for argument : NSString in dashedArguments {
     let key = argument.substringFromIndex(1)
     let value : AnyObject? = NSUserDefaults.standardUserDefaults().valueForKey(key)
     let valueString = value as? String
-    // print("    \(key) \(value)")
+    // print("    \(argument) \(value)")
     
-    if key == "f" && valueString == "HD" {
+    if argument == "-f" && valueString == "HD" {
         isVideoResolutionHD = true
     }
     
-    if key == "-nopdf" {
+    if argument == "--nopdf" {
         wantsPDF = false
     }
     
-    if key == "-pdfonly" {
+    if argument == "--pdfonly" {
         wantsPDFOnly = true
     }
     
-    if key == "s" {
+    if argument == "-s" {
         sessionIds = (valueString?.componentsSeparatedByString(","))!
         print("Downloading for sessions: \(sessionIds)")
     }
