@@ -1,3 +1,4 @@
+#!/usr/bin/swift
 
 import Foundation
 
@@ -263,4 +264,3 @@ for sessionId in sessionIds {
 
 // Test
 // downloadSession("104", wantsPDF: false, wantsPDFOnly: false, isVideoResolutionHD: false)
-
