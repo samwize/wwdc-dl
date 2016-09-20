@@ -2,7 +2,7 @@
 
 This helps to download WWDC 2016 videos and PDF easily. 
 
-Built with Swift scripts!
+Built with Swift 3 scripts!
 
 _This started as a quick hack at 4am. [Read more](http://samwize.com/2016/06/16/swift-script-to-download-all-wwdc-2016-videos-and-pdfs-automatically/)._
 
