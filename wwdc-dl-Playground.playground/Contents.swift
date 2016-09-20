@@ -3,13 +3,13 @@ import Foundation
 
 // http://stackoverflow.com/a/26135752/242682
 func htmlPage(withURL url: String) -> String? {
-    guard let myURL = NSURL(string: url) else {
+    guard let myURL = URL(string: url) else {
         print("Error: \(url) doesn't seem to be a valid URL")
         return nil
     }
     
     do {
-        let myHTMLString = try String(contentsOfURL: myURL)
+        let myHTMLString = try String(contentsOf: myURL)
         return myHTMLString
     } catch let error as NSError {
         print("Error: \(error)")
@@ -18,13 +18,13 @@ func htmlPage(withURL url: String) -> String? {
 }
 
 // http://stackoverflow.com/a/27880748/242682
-func matchesForRegexInText(regex: String!, text: String!) -> [String] {
+func matchesForRegexInText(_ regex: String!, text: String!) -> [String] {
     do {
         let regex = try NSRegularExpression(pattern: regex, options: [])
         let nsString = text as NSString
-        let results = regex.matchesInString(text,
+        let results = regex.matches(in: text,
                                             options: [], range: NSMakeRange(0, nsString.length))
-        return results.map { nsString.substringWithRange($0.range)}
+        return results.map { nsString.substring(with: $0.range)}
     } catch let error as NSError {
         print("invalid regex: \(error.localizedDescription)")
         return []
@@ -33,62 +33,62 @@ func matchesForRegexInText(regex: String!, text: String!) -> [String] {
 
 // http://stackoverflow.com/a/30106868/242682
 class HttpDownloader {
-    class func loadFileSync(url: NSURL, inDirectory directoryString: String?, inYear year: String, completion:(path: String?, error: NSError!) -> Void) {
+    class func loadFileSync(_ url: URL, inDirectory directoryString: String?, inYear year: String, completion:(_ path: String?, _ error: NSError?) -> Void) {
         guard let directoryURL = createDirectoryURL(directoryString) else {
             let directory = directoryString ?? "User's Document directory"
             let error = NSError(domain:"Could not access the directory in \(directory)", code:800, userInfo:nil)
-            completion(path: nil, error: error)
+            completion(nil, error)
             return
         }
 
-        let wwdcDirectoryUrl = directoryURL.URLByAppendingPathComponent("WWDC-\(year)")
+        let wwdcDirectoryUrl = directoryURL.appendingPathComponent("WWDC-\(year)")
 
         guard createWWDCDirectory(wwdcDirectoryUrl) else {
             let error = NSError(domain:"Cannot create WWDC directory", code:800, userInfo:nil)
-            completion(path: nil, error: error)
+            completion(nil, error)
             return
         }
 
-        let destinationUrl = wwdcDirectoryUrl.URLByAppendingPathComponent(url.lastPathComponent!)
+        let destinationUrl = wwdcDirectoryUrl.appendingPathComponent(url.lastPathComponent)
 
-        guard NSFileManager().fileExistsAtPath(destinationUrl.path!) == false else {
+        guard FileManager().fileExists(atPath: destinationUrl.path) == false else {
             let error = NSError(domain:"File already exists", code:800, userInfo:nil)
-            completion(path: destinationUrl.path!, error: error)
+            completion(destinationUrl.path, error)
             return
         }
         
         // Downloading begins here
-        guard let dataFromURL = NSData(contentsOfURL: url) else {
+        guard let dataFromURL = try? Data(contentsOf: url) else {
             let error = NSError(domain:"Error downloading file", code:800, userInfo:nil)
-            completion(path: destinationUrl.path!, error: error)
+            completion(destinationUrl.path, error)
             return
         }
         
-        if dataFromURL.writeToURL(destinationUrl, atomically: true) {
-            completion(path: destinationUrl.path!, error:nil)
+        if (try? dataFromURL.write(to: destinationUrl, options: [.atomic])) != nil {
+            completion(destinationUrl.path, nil)
         } else {
             let error = NSError(domain:"Error saving file", code:800, userInfo:nil)
-            completion(path: destinationUrl.path!, error:error)
+            completion(destinationUrl.path, error)
         }
     }
 
     /// Create the NSURL from the string
-    class func createDirectoryURL(directoryString: String?) -> NSURL? {
-        var directoryURL: NSURL?
+    class func createDirectoryURL(_ directoryString: String?) -> URL? {
+        var directoryURL: URL?
         if let directoryString = directoryString {
-            directoryURL = NSURL(fileURLWithPath: directoryString, isDirectory: true)
+            directoryURL = URL(fileURLWithPath: directoryString, isDirectory: true)
         } else {
             // Use user's Document directory
-            directoryURL =  NSFileManager.defaultManager().URLsForDirectory(.DocumentDirectory, inDomains: .UserDomainMask).first!
+            directoryURL =  FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
         }
         return directoryURL
     }
     
     /// Return true if the WWDC-2016 directory is created/existed for use
-    class func createWWDCDirectory(directory: NSURL) -> Bool {
-        if NSFileManager.defaultManager().fileExistsAtPath(directory.path!) == false {
+    class func createWWDCDirectory(_ directory: URL) -> Bool {
+        if FileManager.default.fileExists(atPath: directory.path) == false {
             do {
-                try NSFileManager.defaultManager().createDirectoryAtURL(directory, withIntermediateDirectories: true, attributes: nil)
+                try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: nil)
                 return true
             } catch let error as NSError {
                 print("Error creating WWDC-2016 directory in the directory/Documents: \(error.localizedDescription)")
@@ -119,7 +119,7 @@ func downloadSession(inYear year: String, forSession sessionId: String, wantsPDF
         let matchesPDF = matchesForRegexInText(regexPDF, text: playPageHtml)
         
         if matchesPDF.count > 0 {
-            let urlPDF = NSURL(string: matchesPDF[0])
+            let urlPDF = URL(string: matchesPDF[0])
             if let urlPDF = urlPDF {
                 HttpDownloader.loadFileSync(urlPDF, inDirectory: directory, inYear: year, completion: { path, error in
                     if let error = error {
@@ -135,18 +135,18 @@ func downloadSession(inYear year: String, forSession sessionId: String, wantsPDF
     }
     
     if wantsPDFOnly == false {
-        var urlVideo: NSURL?
+        var urlVideo: URL?
         if isVideoResolutionHD {
             let matchesHD = matchesForRegexInText(regexHD, text: playPageHtml)
             if matchesHD.count > 0 {
-                urlVideo = NSURL(string: matchesHD[0])
+                urlVideo = URL(string: matchesHD[0])
             } else {
                 print("Cannot find HD Video")
             }
         } else {
             let matchesSD = matchesForRegexInText(regexSD, text: playPageHtml)
             if matchesSD.count > 0 {
-                urlVideo = NSURL(string: matchesSD[0])
+                urlVideo = URL(string: matchesSD[0])
             } else {
                 print("Cannot find SD Video")
             }
@@ -176,17 +176,17 @@ func findAllSessionIds(inYear year: String = "2016") -> [String]? {
     do {
         let regex = try NSRegularExpression(pattern: regexString, options: [])
         let nsString = html as NSString
-        let results = regex.matchesInString(html, options: [], range: NSMakeRange(0, nsString.length))
+        let results = regex.matches(in: html, options: [], range: NSMakeRange(0, nsString.length))
         
         var sessionids = [String]()
         for result in results {
-            let matchedRange = result.rangeAtIndex(1)
-            let matchedString = nsString.substringWithRange(matchedRange)
+            let matchedRange = result.rangeAt(1)
+            let matchedString = nsString.substring(with: matchedRange)
             sessionids.append(matchedString)
         }
         
         let uniqueIds = Array(Set(sessionids))
-        return uniqueIds.sort { $0 < $1 }
+        return uniqueIds.sorted { $0 < $1 }
     } catch let error as NSError {
         print("Regex error: \(error.localizedDescription)")
     }
@@ -209,12 +209,12 @@ var year = "2016" // -y 2015
 
 // Processing launch arguments
 // http://ericasadun.com/2014/06/12/swift-at-the-command-line/
-let arguments = NSProcessInfo.processInfo().arguments as [String]
+let arguments = ProcessInfo.processInfo.arguments as [String]
 let dashedArguments = arguments.filter({$0.hasPrefix("-")})
 
-for argument : NSString in dashedArguments {
-    let key = argument.substringFromIndex(1)
-    let value : AnyObject? = NSUserDefaults.standardUserDefaults().valueForKey(key)
+for argument : String in dashedArguments {
+    let key = argument.substring(from: argument.index(after: argument.startIndex))
+    let value = UserDefaults.standard.value(forKey: key) as AnyObject?
     let valueString = value as? String
     // print("    \(argument) \(value)")
     
@@ -241,7 +241,7 @@ for argument : NSString in dashedArguments {
     }
 
     if argument == "-s" {
-        sessionIds = (valueString?.componentsSeparatedByString(","))!
+        sessionIds = (valueString?.components(separatedBy: ","))!
         isDownloadAll = false
         print("Downloading for sessions: \(sessionIds)")
     }
@@ -262,5 +262,5 @@ for sessionId in sessionIds {
 }
 
 // Test
-// downloadSession("104", wantsPDF: false, wantsPDFOnly: false, isVideoResolutionHD: false)
+//downloadSession(inYear: "2016", forSession: "104", wantsPDF: false, wantsPDFOnly: false, isVideoResolutionHD: false, inDirectory: directoryToSaveTo)
 
