@@ -35,7 +35,7 @@ By default, the script will download the SD video and PDF in your `~/Documents/W
     ./wwdc-dl -s 102 --nopdf
 
     # For other years
-    ./wwdc-dl -s 102 -y 2005 
+    ./wwdc-dl -s 102 -y 2014
     
     # Specific the directory to save in
     ./wwdc-dl -s 102 -d /Volumes/AwesomeDrive/

@@ -111,9 +111,15 @@ func downloadSession(inYear year: String, forSession sessionId: String, wantsPDF
     // http://devstreaming.apple.com/videos/wwdc/2016/802z6j79sd7g5drr7k7/802/802_hd_designing_for_tvos.mp4
     // http://devstreaming.apple.com/videos/wwdc/2016/802z6j79sd7g5drr7k7/802/802_sd_designing_for_tvos.mp4
     // http://devstreaming.apple.com/videos/wwdc/2016/802z6j79sd7g5drr7k7/802/802_designing_for_tvos.pdf
-    let regexHD = "http://devstreaming.apple.com/videos/wwdc/\(year)/\(sessionId).*/\(sessionId)/\(sessionId)_hd_.*.mp4"
-    let regexSD = "http://devstreaming.apple.com/videos/wwdc/\(year)/\(sessionId).*/\(sessionId)/\(sessionId)_sd_.*.mp4"
+    var regexHD = "http://devstreaming.apple.com/videos/wwdc/\(year)/\(sessionId).*/\(sessionId)/\(sessionId)_hd_.*.mp4"
+    var regexSD = "http://devstreaming.apple.com/videos/wwdc/\(year)/\(sessionId).*/\(sessionId)/\(sessionId)_sd_.*.mp4"
     let regexPDF = "http://devstreaming.apple.com/videos/wwdc/\(year)/\(sessionId).*/\(sessionId)/\(sessionId)_.*.pdf"
+    
+    if year == "2014" {
+        // Use .mov istead
+        regexHD = "http://devstreaming.apple.com/videos/wwdc/\(year)/\(sessionId).*/\(sessionId)/\(sessionId)_hd_.*.mov"
+        regexSD = "http://devstreaming.apple.com/videos/wwdc/\(year)/\(sessionId).*/\(sessionId)/\(sessionId)_sd_.*.mov"
+    }
     
     if wantsPDF {
         let matchesPDF = matchesForRegexInText(regexPDF, text: playPageHtml)
@@ -263,4 +269,5 @@ for sessionId in sessionIds {
 
 // Test
 //downloadSession(inYear: "2016", forSession: "104", wantsPDF: false, wantsPDFOnly: false, isVideoResolutionHD: false, inDirectory: directoryToSaveTo)
+downloadSession(inYear: "2014", forSession: "228", wantsPDF: true, wantsPDFOnly: false, isVideoResolutionHD: true, inDirectory: directoryToSaveTo)
 
