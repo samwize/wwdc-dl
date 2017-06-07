@@ -116,10 +116,17 @@ func downloadSession(inYear year: String, forSession sessionId: String, wantsPDF
     var regexSD = "http://devstreaming.apple.com/videos/wwdc/\(year)/\(sessionId).*/\(sessionId)/\(sessionId)_sd_.*.mp4"
     let regexPDF = "http://devstreaming.apple.com/videos/wwdc/\(year)/\(sessionId).*/\(sessionId)/\(sessionId)_.*.pdf"
     
-    if year == "2014" {
-        // Use .mov istead
-        regexHD = "http://devstreaming.apple.com/videos/wwdc/\(year)/\(sessionId).*/\(sessionId)/\(sessionId)_hd_.*.mov"
-        regexSD = "http://devstreaming.apple.com/videos/wwdc/\(year)/\(sessionId).*/\(sessionId)/\(sessionId)_sd_.*.mov"
+    switch year {
+    case "2017":
+        // https and cdn subdomain
+        regexHD = regexHD.replacingOccurrences(of: "http://devstreaming.apple.com", with: "https://devstreaming-cdn.apple.com")
+        regexSD = regexSD.replacingOccurrences(of: "http://devstreaming.apple.com", with: "https://devstreaming-cdn.apple.com")
+    case "2014":
+        // .mov istead
+        regexHD = regexHD.replacingOccurrences(of: ".*.mp4", with: ".*.mov")
+        regexSD = regexSD.replacingOccurrences(of: ".*.mp4", with: ".*.mov")
+    default:
+        break
     }
     
     if wantsPDF {
@@ -212,7 +219,7 @@ var isVideoResolutionHD = false // -f HD
 var wantsPDFOnly = false // --pdfonly
 var wantsPDF = true // --nopdf
 var directoryToSaveTo: String? = nil // nil will be user's Documents directory
-var year = "2016" // -y 2015
+var year = "2017" // -y 2015
 
 // Processing launch arguments
 // http://ericasadun.com/2014/06/12/swift-at-the-command-line/
@@ -269,6 +276,7 @@ for sessionId in sessionIds {
 }
 
 // Test
+//downloadSession(inYear: "2014", forSession: "228", wantsPDF: true, wantsPDFOnly: false, isVideoResolutionHD: true, inDirectory: directoryToSaveTo)
 //downloadSession(inYear: "2016", forSession: "104", wantsPDF: false, wantsPDFOnly: false, isVideoResolutionHD: false, inDirectory: directoryToSaveTo)
-downloadSession(inYear: "2014", forSession: "228", wantsPDF: true, wantsPDFOnly: false, isVideoResolutionHD: true, inDirectory: directoryToSaveTo)
+//downloadSession(inYear: "2017", forSession: "102", wantsPDF: true, wantsPDFOnly: false, isVideoResolutionHD: true, inDirectory: directoryToSaveTo)
 
