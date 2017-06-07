@@ -58,19 +58,15 @@ class HttpDownloader {
             return
         }
         
-        // Downloading begins here
-        guard let dataFromURL = try? Data(contentsOf: url) else {
-            let error = NSError(domain:"Error downloading file", code:800, userInfo:nil)
+        do {
+            // Downloading begins here
+            let dataFromURL = try Data(contentsOf: url)
+            try dataFromURL.write(to: destinationUrl, options: [.atomic])
+        } catch let error as NSError {
+            print("Error downloading/writing \(error)")
             completion(destinationUrl.path, error)
-            return
         }
         
-        if (try? dataFromURL.write(to: destinationUrl, options: [.atomic])) != nil {
-            completion(destinationUrl.path, nil)
-        } else {
-            let error = NSError(domain:"Error saving file", code:800, userInfo:nil)
-            completion(destinationUrl.path, error)
-        }
     }
 
     /// Create the NSURL from the string
@@ -278,5 +274,5 @@ for sessionId in sessionIds {
 // Test
 //downloadSession(inYear: "2014", forSession: "228", wantsPDF: true, wantsPDFOnly: false, isVideoResolutionHD: true, inDirectory: directoryToSaveTo)
 //downloadSession(inYear: "2016", forSession: "104", wantsPDF: false, wantsPDFOnly: false, isVideoResolutionHD: false, inDirectory: directoryToSaveTo)
-//downloadSession(inYear: "2017", forSession: "102", wantsPDF: true, wantsPDFOnly: false, isVideoResolutionHD: true, inDirectory: directoryToSaveTo)
+//downloadSession(inYear: "2017", forSession: "102", wantsPDF: true, wantsPDFOnly: false, isVideoResolutionHD: false, inDirectory: directoryToSaveTo)
 
