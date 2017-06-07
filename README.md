@@ -1,13 +1,12 @@
 # wwdc-dl
 
-This helps to download WWDC 2016 videos and PDF easily. 
+This CLI tool helps to download WWDC videos and PDF easily.
 
-Built with Swift 3 scripts!
+And is totally built with Swift 3 scripts!
 
 _This started as a quick hack at 4am. [Read more](http://samwize.com/2016/06/16/swift-script-to-download-all-wwdc-2016-videos-and-pdfs-automatically/)._
 
-Wait.. WWDC 2015 and 2014 are supported too!
-
+Works for **WWDC 2017**, all the way to WWDC 2014.
 
 ## Usage
 
@@ -18,7 +17,6 @@ Wait.. WWDC 2015 and 2014 are supported too!
     ./wwdc-dl -s 102,402
 
 By default, the script will download the SD video and PDF in your `~/Documents/WWDC-2016`.
-
 
 ## Advanced Usage
 
@@ -39,7 +37,6 @@ By default, the script will download the SD video and PDF in your `~/Documents/W
     
     # Specific the directory to save in
     ./wwdc-dl -s 102 -d /Volumes/AwesomeDrive/
-
 
 ## Playground
 
