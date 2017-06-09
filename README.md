@@ -8,6 +8,15 @@ _This started as a quick hack at 4am. [Read more](http://samwize.com/2016/06/16/
 
 Works for **WWDC 2017**, all the way to WWDC 2014.
 
+## Setup youtube-dl
+
+WWDC 2017 streams in HLS. `youtube-dl` is used to conveniently download HLS streams (unless if you know a the Swift way to download HLS, let me know)!
+
+Install [youtube-dl](https://rg3.github.io/youtube-dl/):
+    
+    sudo curl -L https://yt-dl.org/downloads/latest/youtube-dl -o /usr/local/bin/youtube-dl
+    sudo chmod a+rx /usr/local/bin/youtube-dl
+
 ## Usage
 
     # Download all PDFs

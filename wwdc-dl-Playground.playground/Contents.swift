@@ -95,9 +95,26 @@ class HttpDownloader {
     }
 }
 
+func shell(launchPath: String, arguments: [String]) -> String {
+    let task = Process()
+    task.launchPath = launchPath
+    task.arguments = arguments
+    
+    let pipe = Pipe()
+    task.standardOutput = pipe
+    task.launch()
+    
+    let data = pipe.fileHandleForReading.readDataToEndOfFile()
+    let output: String = String(data: data, encoding: .utf8)! as String
+    
+    return output
+}
+
 func downloadSession(inYear year: String, forSession sessionId: String, wantsPDF: Bool, wantsPDFOnly: Bool, isVideoResolutionHD: Bool, inDirectory directory: String?) {
     print("Processing for Session \(sessionId)..")
     let playPageUrl = "https://developer.apple.com/videos/play/wwdc\(year)/\(sessionId)/"
+    print(playPageUrl)
+    
     guard let playPageHtml = htmlPage(withURL: playPageUrl) else {
         print("Cannot read the HTML page: \(playPageUrl)")
         return
@@ -111,12 +128,12 @@ func downloadSession(inYear year: String, forSession sessionId: String, wantsPDF
     var regexSD = "http://devstreaming.apple.com/videos/wwdc/\(year)/\(sessionId).*/\(sessionId)/\(sessionId)_sd_.*.mp4"
     var regexPDF = "http://devstreaming.apple.com/videos/wwdc/\(year)/\(sessionId).*/\(sessionId)/\(sessionId)_.*.pdf"
     
+    let regexHls = "https://devstreaming-cdn.apple.com/videos/wwdc/\(year)/\(sessionId).*/\(sessionId).*.m3u8"
+    
     switch year {
     case "2017":
         // https and cdn subdomain
         regexHD = regexHD.replacingOccurrences(of: "http://devstreaming.apple.com", with: "https://devstreaming-cdn.apple.com")
-        // TODO: Live stream uses m3u8
-        // regexSD = "http://devstreaming.apple.com/videos/wwdc/\(year)/\(sessionId).*/\(sessionId).*.m3u8"
         regexSD = regexSD.replacingOccurrences(of: "http://devstreaming.apple.com", with: "https://devstreaming-cdn.apple.com")
         regexPDF = regexPDF.replacingOccurrences(of: "http://devstreaming.apple.com", with: "https://devstreaming-cdn.apple.com")
     case "2014":
@@ -147,6 +164,17 @@ func downloadSession(inYear year: String, forSession sessionId: String, wantsPDF
     }
     
     if wantsPDFOnly == false {
+        
+        let matchesHls = matchesForRegexInText(regexHls, text: playPageHtml)
+        guard matchesHls.count == 0 else {
+            // This is HLS
+            let hlsUrl = matchesHls[0]
+            let outputFilename = "\(sessionId).mp4"
+            let result = shell(launchPath: "/usr/local/bin/youtube-dl", arguments: [hlsUrl, "-o", outputFilename])
+            print(result)
+            return
+        }
+        
         var urlVideo: URL?
         if isVideoResolutionHD {
             let matchesHD = matchesForRegexInText(regexHD, text: playPageHtml)
@@ -276,5 +304,5 @@ for sessionId in sessionIds {
 // Test
 //downloadSession(inYear: "2014", forSession: "228", wantsPDF: true, wantsPDFOnly: false, isVideoResolutionHD: true, inDirectory: directoryToSaveTo)
 //downloadSession(inYear: "2016", forSession: "104", wantsPDF: false, wantsPDFOnly: false, isVideoResolutionHD: false, inDirectory: directoryToSaveTo)
-//downloadSession(inYear: "2017", forSession: "701", wantsPDF: true, wantsPDFOnly: false, isVideoResolutionHD: false, inDirectory: directoryToSaveTo)
+//downloadSession(inYear: "2017", forSession: "701", wantsPDF: true, wantsPDFOnly: false, isVideoResolutionHD: false, inDirectory: directoryToSaveTo) // HLS
 
