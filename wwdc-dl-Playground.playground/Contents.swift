@@ -68,31 +68,32 @@ class HttpDownloader {
         
     }
 
-    /// Create the NSURL from the string
-    class func createDirectoryURL(_ directoryString: String?) -> URL? {
-        var directoryURL: URL?
-        if let directoryString = directoryString {
-            directoryURL = URL(fileURLWithPath: directoryString, isDirectory: true)
-        } else {
-            // Use user's Document directory
-            directoryURL =  FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        }
-        return directoryURL
+}
+
+/// Create the NSURL from the string
+func createDirectoryURL(_ directoryString: String?) -> URL? {
+    var directoryURL: URL?
+    if let directoryString = directoryString {
+        directoryURL = URL(fileURLWithPath: directoryString, isDirectory: true)
+    } else {
+        // Use user's Document directory
+        directoryURL =  FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
     }
-    
-    /// Return true if the WWDC-2016 directory is created/existed for use
-    class func createWWDCDirectory(_ directory: URL) -> Bool {
-        if FileManager.default.fileExists(atPath: directory.path) == false {
-            do {
-                try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: nil)
-                return true
-            } catch let error as NSError {
-                print("Error creating WWDC-2016 directory in the directory/Documents: \(error.localizedDescription)")
-            }
-            return false
+    return directoryURL
+}
+
+/// Return true if the WWDC directory is created/existed for use
+func createWWDCDirectory(_ directory: URL) -> Bool {
+    if FileManager.default.fileExists(atPath: directory.path) == false {
+        do {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: nil)
+            return true
+        } catch let error as NSError {
+            print("Error creating WWDC directory in the directory/Documents: \(error.localizedDescription)")
         }
-        return true
+        return false
     }
+    return true
 }
 
 func shell(launchPath: String, arguments: [String]) -> String {
@@ -168,9 +169,28 @@ func downloadSession(inYear year: String, forSession sessionId: String, wantsPDF
         let matchesHls = matchesForRegexInText(regexHls, text: playPageHtml)
         guard matchesHls.count == 0 else {
             // This is HLS
-            let hlsUrl = matchesHls[0]
-            let outputFilename = "\(sessionId).mp4"
-            let result = shell(launchPath: "/usr/local/bin/youtube-dl", arguments: [hlsUrl, "-o", outputFilename])
+            let hlsUrlString = matchesHls[0]
+
+            // TODO: Refactor creation of directory. Dup code.
+            let directoryString = directory
+            guard let directoryURL = createDirectoryURL(directoryString) else {
+                let directory = directoryString ?? "User's Document directory"
+                print("Could not access the directory in \(directory)")
+                return
+            }
+            
+            let wwdcDirectoryUrl = directoryURL.appendingPathComponent("WWDC-\(year)")
+            
+            guard createWWDCDirectory(wwdcDirectoryUrl) else {
+                print("Cannot create WWDC directory")
+                return
+            }
+            
+            let destinationUrl = wwdcDirectoryUrl.appendingPathComponent("\(sessionId).mp4")
+            let destinationUrlString = destinationUrl.absoluteString.replacingOccurrences(of: "file://", with: "")
+            
+            print("youtube-dl to \(destinationUrlString)")
+            let result = shell(launchPath: "/usr/local/bin/youtube-dl", arguments: [hlsUrlString, "-o", destinationUrlString])
             print(result)
             return
         }
