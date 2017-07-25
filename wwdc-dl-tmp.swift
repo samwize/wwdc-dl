@@ -167,35 +167,6 @@ func downloadSession(inYear year: String, forSession sessionId: String, wantsPDF
     
     if wantsPDFOnly == false {
         
-        let matchesHls = matchesForRegexInText(regexHls, text: playPageHtml)
-        guard matchesHls.count == 0 else {
-            // This is HLS
-            let hlsUrlString = matchesHls[0]
-
-            // TODO: Refactor creation of directory. Dup code.
-            let directoryString = directory
-            guard let directoryURL = createDirectoryURL(directoryString) else {
-                let directory = directoryString ?? "User's Document directory"
-                print("Could not access the directory in \(directory)")
-                return
-            }
-            
-            let wwdcDirectoryUrl = directoryURL.appendingPathComponent("WWDC-\(year)")
-            
-            guard createWWDCDirectory(wwdcDirectoryUrl) else {
-                print("Cannot create WWDC directory")
-                return
-            }
-            
-            let destinationUrl = wwdcDirectoryUrl.appendingPathComponent("\(sessionId).mp4")
-            let destinationUrlString = destinationUrl.absoluteString.replacingOccurrences(of: "file://", with: "")
-            
-            print("youtube-dl to \(destinationUrlString)")
-            let result = shell(launchPath: "/usr/local/bin/youtube-dl", arguments: [hlsUrlString, "-o", destinationUrlString])
-            print(result)
-            return
-        }
-        
         var urlVideo: URL?
         if isVideoResolutionHD {
             let matchesHD = matchesForRegexInText(regexHD, text: playPageHtml)
@@ -212,8 +183,9 @@ func downloadSession(inYear year: String, forSession sessionId: String, wantsPDF
                 print("Cannot find SD Video")
             }
         }
-
+        
         if let urlVideo = urlVideo {
+            // Download direct
             HttpDownloader.loadFileSync(urlVideo, inDirectory: directory, inYear: year, completion: { path, error in
                 if let error = error {
                     print("Error: \(error.localizedDescription)")
@@ -221,6 +193,36 @@ func downloadSession(inYear year: String, forSession sessionId: String, wantsPDF
                     print("Video downloaded to: \(path!)")
                 }
             })
+        } else {
+            // Try HLS
+            let matchesHls = matchesForRegexInText(regexHls, text: playPageHtml)
+            guard matchesHls.count == 0 else {
+                // This is HLS
+                let hlsUrlString = matchesHls[0]
+                
+                // TODO: Refactor creation of directory. Dup code.
+                let directoryString = directory
+                guard let directoryURL = createDirectoryURL(directoryString) else {
+                    let directory = directoryString ?? "User's Document directory"
+                    print("Could not access the directory in \(directory)")
+                    return
+                }
+                
+                let wwdcDirectoryUrl = directoryURL.appendingPathComponent("WWDC-\(year)")
+                
+                guard createWWDCDirectory(wwdcDirectoryUrl) else {
+                    print("Cannot create WWDC directory")
+                    return
+                }
+                
+                let destinationUrl = wwdcDirectoryUrl.appendingPathComponent("\(sessionId).mp4")
+                let destinationUrlString = destinationUrl.absoluteString.replacingOccurrences(of: "file://", with: "")
+                
+                print("youtube-dl to \(destinationUrlString)")
+                let result = shell(launchPath: "/usr/local/bin/youtube-dl", arguments: [hlsUrlString, "-o", destinationUrlString])
+                print(result)
+                return
+            }
         }
     }
 }
