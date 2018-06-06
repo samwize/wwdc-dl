@@ -115,12 +115,11 @@ func shell(launchPath: String, arguments: [String]) -> String {
 }
 
 func downloadSession(inYear year: String, forSession sessionId: String, wantsPDF: Bool, wantsPDFOnly: Bool, isVideoResolutionHD: Bool, inDirectory directory: String?) {
-    print("Processing for Session \(sessionId)..")
     let playPageUrl = "https://developer.apple.com/videos/play/wwdc\(year)/\(sessionId)/"
-    print(playPageUrl)
-    
+    print("Processing for \(playPageUrl)..")
+
     guard let playPageHtml = htmlPage(withURL: playPageUrl) else {
-        print("Cannot read the HTML page: \(playPageUrl)")
+        print("Error: Cannot read the HTML page")
         return
     }
     
@@ -189,6 +188,7 @@ func downloadSession(inYear year: String, forSession sessionId: String, wantsPDF
         
         if let urlVideo = urlVideo {
             // Download direct
+            print("Downloading from \(urlVideo). Please wait..")
             HttpDownloader.loadFileSync(urlVideo, inDirectory: directory, inYear: year, completion: { path, error in
                 if let error = error {
                     print("Error: \(error.localizedDescription)")
@@ -283,7 +283,7 @@ for argument : String in dashedArguments {
     let key = String(argument[offset...])
     let value = UserDefaults.standard.value(forKey: key)
     let valueString = value as? String
-     print("    |\(argument) \(value ?? "no value")")
+    // print("    \(argument) \(value ?? "no value")")
 
     if argument == "-d" {
         if let directory = valueString {
@@ -332,4 +332,4 @@ for sessionId in sessionIds {
 //downloadSession(inYear: "2014", forSession: "228", wantsPDF: true, wantsPDFOnly: false, isVideoResolutionHD: true, inDirectory: directoryToSaveTo)
 //downloadSession(inYear: "2016", forSession: "104", wantsPDF: false, wantsPDFOnly: false, isVideoResolutionHD: false, inDirectory: directoryToSaveTo)
 //downloadSession(inYear: "2017", forSession: "701", wantsPDF: true, wantsPDFOnly: false, isVideoResolutionHD: false, inDirectory: directoryToSaveTo) // HLS
-//downloadSession(inYear: "2018", forSession: "101", wantsPDF: true, wantsPDFOnly: false, isVideoResolutionHD: true, inDirectory: directoryToSaveTo) // HLS
+//downloadSession(inYear: "2018", forSession: "202", wantsPDF: true, wantsPDFOnly: false, isVideoResolutionHD: true, inDirectory: directoryToSaveTo) 
