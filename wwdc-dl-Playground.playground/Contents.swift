@@ -1,6 +1,8 @@
 
 import Foundation
 
+let currentYear = "2018"
+
 // http://stackoverflow.com/a/26135752/242682
 func htmlPage(withURL url: String) -> String? {
     guard let myURL = URL(string: url) else {
@@ -132,7 +134,7 @@ func downloadSession(inYear year: String, forSession sessionId: String, wantsPDF
     let regexHls = "https://devstreaming-cdn.apple.com/videos/wwdc/\(year)/\(sessionId).*/\(sessionId).*.m3u8"
     
     switch year {
-    case "2017":
+    case "2017", "2018":
         // https and cdn subdomain
         regexHD = regexHD.replacingOccurrences(of: "http://devstreaming.apple.com", with: "https://devstreaming-cdn.apple.com")
         regexSD = regexSD.replacingOccurrences(of: "http://devstreaming.apple.com", with: "https://devstreaming-cdn.apple.com")
@@ -171,6 +173,7 @@ func downloadSession(inYear year: String, forSession sessionId: String, wantsPDF
             let matchesHD = matchesForRegexInText(regexHD, text: playPageHtml)
             if matchesHD.count > 0 {
                 urlVideo = URL(string: matchesHD[0])
+                print("Video URL: \(urlVideo!.absoluteString)")
             } else {
                 print("Cannot find HD Video")
             }
@@ -226,7 +229,7 @@ func downloadSession(inYear year: String, forSession sessionId: String, wantsPDF
     }
 }
 
-func findAllSessionIds(inYear year: String = "2016") -> [String]? {
+func findAllSessionIds(inYear year: String = currentYear) -> [String]? {
     let urlString = "https://developer.apple.com/videos/wwdc\(year)/"
     guard let html = htmlPage(withURL: urlString) else {
         print("Cannot read the HTML page: \(urlString)")
@@ -242,7 +245,7 @@ func findAllSessionIds(inYear year: String = "2016") -> [String]? {
         
         var sessionids = [String]()
         for result in results {
-            let matchedRange = result.rangeAt(1)
+            let matchedRange = result.range(at: 1)
             let matchedString = nsString.substring(with: matchedRange)
             sessionids.append(matchedString)
         }
@@ -256,8 +259,8 @@ func findAllSessionIds(inYear year: String = "2016") -> [String]? {
 }
 
 // Test
-//findAllSessionIds() // 2016 by default
-//findAllSessionIds(inYear: "2015")
+//findAllSessionIds()
+//findAllSessionIds(inYear: "2017")
 
 
 // Sensible defaults
@@ -267,19 +270,20 @@ var isVideoResolutionHD = false // -f HD
 var wantsPDFOnly = false // --pdfonly
 var wantsPDF = true // --nopdf
 var directoryToSaveTo: String? = nil // nil will be user's Documents directory
-var year = "2017" // -y 2015
+var year = currentYear // -y 2015
 
 // Processing launch arguments
 // http://ericasadun.com/2014/06/12/swift-at-the-command-line/
 let arguments = ProcessInfo.processInfo.arguments as [String]
-let dashedArguments = arguments.filter({$0.hasPrefix("-")})
+let dashedArguments = arguments.filter { $0.hasPrefix("-") }
 
 for argument : String in dashedArguments {
-    let key = argument.substring(from: argument.index(after: argument.startIndex))
-    let value = UserDefaults.standard.value(forKey: key) as AnyObject?
+    let offset = argument.index(argument.startIndex, offsetBy: 1)
+    let key = String(argument[offset...])
+    let value = UserDefaults.standard.value(forKey: key)
     let valueString = value as? String
-    // print("    \(argument) \(value)")
-    
+     print("    \(argument) \(value ?? "no value")")
+
     if argument == "-d" {
         if let directory = valueString {
             directoryToSaveTo = directory
@@ -327,4 +331,4 @@ for sessionId in sessionIds {
 //downloadSession(inYear: "2014", forSession: "228", wantsPDF: true, wantsPDFOnly: false, isVideoResolutionHD: true, inDirectory: directoryToSaveTo)
 //downloadSession(inYear: "2016", forSession: "104", wantsPDF: false, wantsPDFOnly: false, isVideoResolutionHD: false, inDirectory: directoryToSaveTo)
 //downloadSession(inYear: "2017", forSession: "701", wantsPDF: true, wantsPDFOnly: false, isVideoResolutionHD: false, inDirectory: directoryToSaveTo) // HLS
-
+//downloadSession(inYear: "2018", forSession: "101", wantsPDF: true, wantsPDFOnly: false, isVideoResolutionHD: true, inDirectory: directoryToSaveTo) // HLS
