@@ -36,18 +36,9 @@ func matchesForRegexInText(_ regex: String!, text: String!) -> [String] {
 // http://stackoverflow.com/a/30106868/242682
 class HttpDownloader {
     class func loadFileSync(_ url: URL, inDirectory directoryString: String?, inYear year: String, completion:(_ path: String?, _ error: NSError?) -> Void) {
-        guard let directoryURL = createDirectoryURL(directoryString) else {
-            let directory = directoryString ?? "User's Document directory"
-            let error = NSError(domain:"Could not access the directory in \(directory)", code:800, userInfo:nil)
-            completion(nil, error)
-            return
-        }
 
-        let wwdcDirectoryUrl = directoryURL.appendingPathComponent("WWDC-\(year)")
-
-        guard createWWDCDirectory(wwdcDirectoryUrl) else {
-            let error = NSError(domain:"Cannot create WWDC directory", code:800, userInfo:nil)
-            completion(nil, error)
+        guard let wwdcDirectoryUrl = ensureWwdcDirectoryIsCreated(in: directoryString, year: year) else {
+            print("Could not create WWDC directory")
             return
         }
 
@@ -98,6 +89,22 @@ func createWWDCDirectory(_ directory: URL) -> Bool {
     return true
 }
 
+func ensureWwdcDirectoryIsCreated(in directoryString: String?, year: String) -> URL? {
+    guard let directoryURL = createDirectoryURL(directoryString) else {
+        print("Could not access the directory in \(directoryString ?? "User's Document directory")")
+        return nil
+    }
+
+    let wwdcDirectoryUrl = directoryURL.appendingPathComponent("WWDC-\(year)")
+
+    guard createWWDCDirectory(wwdcDirectoryUrl) else {
+        print("Cannot create WWDC directory")
+        return nil
+    }
+
+    return wwdcDirectoryUrl
+}
+
 func shell(launchPath: String, arguments: [String]) -> String {
     let task = Process()
     task.launchPath = launchPath
@@ -113,9 +120,15 @@ func shell(launchPath: String, arguments: [String]) -> String {
     return output
 }
 
-func downloadSession(inYear year: String, forSession sessionId: String, wantsPDF: Bool, wantsPDFOnly: Bool, isVideoResolutionHD: Bool, inDirectory directory: String?) {
+func downloadWithYoutubeDl(url: String, in directory: String) {
+    print("Using youtube-dl")
+    let result = shell(launchPath: "/usr/local/bin/youtube-dl", arguments: [url, "-o", directory])
+    print(result)
+}
+
+func downloadSession(inYear year: String, forSession sessionId: String, wantsPDF: Bool, wantsPDFOnly: Bool, isVideoResolutionHD: Bool, inDirectory directory: String?, useYoutubeDl: Bool = false) {
     let playPageUrl = "https://developer.apple.com/videos/play/wwdc\(year)/\(sessionId)/"
-    print("Processing for \(playPageUrl)..")
+    print("Processing \(playPageUrl)")
 
     guard let playPageHtml = htmlPage(withURL: playPageUrl) else {
         print("Error: Cannot read the HTML page")
@@ -145,7 +158,16 @@ func downloadSession(inYear year: String, forSession sessionId: String, wantsPDF
     default:
         break
     }
-    
+
+    // Setup to for the directory to download the files to
+    guard let wwdcDirectoryUrl = ensureWwdcDirectoryIsCreated(in: directory, year: year) else {
+        print("Could not create WWDC directory")
+        return
+    }
+
+    let destinationUrl = wwdcDirectoryUrl.appendingPathComponent("\(sessionId).mp4")
+    let destinationUrlString = destinationUrl.absoluteString.replacingOccurrences(of: "file://", with: "")
+
     if wantsPDF {
         let matchesPDF = matchesForRegexInText(regexPDF, text: playPageHtml)
         
@@ -188,42 +210,26 @@ func downloadSession(inYear year: String, forSession sessionId: String, wantsPDF
         if let urlVideo = urlVideo {
             // Download direct
             print("Downloading from \(urlVideo). Please wait..")
-            HttpDownloader.loadFileSync(urlVideo, inDirectory: directory, inYear: year, completion: { path, error in
-                if let error = error {
-                    print("Error: \(error.localizedDescription)")
-                } else {
-                    print("Video downloaded to: \(path!)")
-                }
-            })
+
+            if !useYoutubeDl {
+                HttpDownloader.loadFileSync(urlVideo, inDirectory: directory, inYear: year, completion: { path, error in
+                    if let error = error {
+                        print("Error: \(error.localizedDescription)")
+                    } else {
+                        print("Video downloaded to: \(path!)")
+                    }
+                })
+            } else {
+                // TODO: destinationUrlString is /path/to/<sessionid>.mp4. It should be a directory to save the file in, and using the url as file name.
+                downloadWithYoutubeDl(url: urlVideo.absoluteString, in: destinationUrlString)
+            }
         } else {
             // Try HLS
             let matchesHls = matchesForRegexInText(regexHls, text: playPageHtml)
-            guard matchesHls.count == 0 else {
+            if matchesHls.count > 0 {
                 // This is HLS
                 let hlsUrlString = matchesHls[0]
-                
-                // TODO: Refactor creation of directory. Dup code.
-                let directoryString = directory
-                guard let directoryURL = createDirectoryURL(directoryString) else {
-                    let directory = directoryString ?? "User's Document directory"
-                    print("Could not access the directory in \(directory)")
-                    return
-                }
-                
-                let wwdcDirectoryUrl = directoryURL.appendingPathComponent("WWDC-\(year)")
-                
-                guard createWWDCDirectory(wwdcDirectoryUrl) else {
-                    print("Cannot create WWDC directory")
-                    return
-                }
-                
-                let destinationUrl = wwdcDirectoryUrl.appendingPathComponent("\(sessionId).mp4")
-                let destinationUrlString = destinationUrl.absoluteString.replacingOccurrences(of: "file://", with: "")
-                
-                print("youtube-dl to \(destinationUrlString)")
-                let result = shell(launchPath: "/usr/local/bin/youtube-dl", arguments: [hlsUrlString, "-o", destinationUrlString])
-                print(result)
-                return
+                downloadWithYoutubeDl(url: hlsUrlString, in: destinationUrlString)
             }
         }
     }
@@ -258,11 +264,6 @@ func findAllSessionIds(inYear year: String = currentYear) -> [String]? {
     return nil
 }
 
-// Test
-//findAllSessionIds()
-//findAllSessionIds(inYear: "2017")
-
-
 // Sensible defaults
 var sessionIds = [String]()  // -s 123,456 or if nil, download all!
 var isDownloadAll = false // -a to download all
@@ -271,6 +272,7 @@ var wantsPDFOnly = false // --pdfonly
 var wantsPDF = true // --nopdf
 var directoryToSaveTo: String? = nil // nil will be user's Documents directory
 var year = currentYear // -y 2015
+var useYoutubeDl = false
 
 // Processing launch arguments
 // http://ericasadun.com/2014/06/12/swift-at-the-command-line/
@@ -317,6 +319,11 @@ for argument : String in dashedArguments {
             year = yearString
         }
     }
+
+    if argument == "--youtubedl" {
+        useYoutubeDl = true
+    }
+
 }
 
 if isDownloadAll {
@@ -324,11 +331,13 @@ if isDownloadAll {
 }
 
 for sessionId in sessionIds {
-    downloadSession(inYear: year, forSession: sessionId, wantsPDF: wantsPDF, wantsPDFOnly: wantsPDFOnly, isVideoResolutionHD: isVideoResolutionHD, inDirectory: directoryToSaveTo)
+    downloadSession(inYear: year, forSession: sessionId, wantsPDF: wantsPDF, wantsPDFOnly: wantsPDFOnly, isVideoResolutionHD: isVideoResolutionHD, inDirectory: directoryToSaveTo, useYoutubeDl: useYoutubeDl)
 }
 
 // Test
+//findAllSessionIds()
+//findAllSessionIds(inYear: "2017")
 //downloadSession(inYear: "2014", forSession: "228", wantsPDF: true, wantsPDFOnly: false, isVideoResolutionHD: true, inDirectory: directoryToSaveTo)
 //downloadSession(inYear: "2016", forSession: "104", wantsPDF: false, wantsPDFOnly: false, isVideoResolutionHD: false, inDirectory: directoryToSaveTo)
 //downloadSession(inYear: "2017", forSession: "701", wantsPDF: true, wantsPDFOnly: false, isVideoResolutionHD: false, inDirectory: directoryToSaveTo) // HLS
-//downloadSession(inYear: "2018", forSession: "202", wantsPDF: true, wantsPDFOnly: false, isVideoResolutionHD: true, inDirectory: directoryToSaveTo) 
+//downloadSession(inYear: "2018", forSession: "202", wantsPDF: true, wantsPDFOnly: false, isVideoResolutionHD: true, inDirectory: directoryToSaveTo, useYoutubeDl: true)

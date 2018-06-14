@@ -17,6 +17,8 @@ Install [youtube-dl](https://rg3.github.io/youtube-dl/):
     sudo curl -L https://yt-dl.org/downloads/latest/youtube-dl -o /usr/local/bin/youtube-dl
     sudo chmod a+rx /usr/local/bin/youtube-dl
 
+youtube-dl have the added benefits such as resuming downloads.
+
 ## Usage
 
     # Download all PDFs
@@ -46,6 +48,9 @@ By default, the script will download the SD video and PDF in your `~/Documents/W
 
     # Specific the directory to save in
     ./wwdc-dl -s 102 -d /Volumes/AwesomeDrive/
+
+    # Always download using youtube-dl
+    ./wwdc-dl -s 102 --youtubedl
 
 ## Playground
 
