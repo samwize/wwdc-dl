@@ -2,7 +2,7 @@
 
 import Foundation
 
-let currentYear = "2018"
+let currentYear = "2019"
 
 // http://stackoverflow.com/a/26135752/242682
 func htmlPage(withURL url: String) -> String? {
@@ -147,7 +147,7 @@ func downloadSession(inYear year: String, forSession sessionId: String, wantsPDF
     let regexHls = "https://devstreaming-cdn.apple.com/videos/wwdc/\(year)/\(sessionId).*/\(sessionId).*.m3u8"
     
     switch year {
-    case "2017", "2018":
+    case "2017", "2018", "2019":
         // https and cdn subdomain
         regexHD = regexHD.replacingOccurrences(of: "http://devstreaming.apple.com", with: "https://devstreaming-cdn.apple.com")
         regexSD = regexSD.replacingOccurrences(of: "http://devstreaming.apple.com", with: "https://devstreaming-cdn.apple.com")
@@ -221,6 +221,7 @@ func downloadSession(inYear year: String, forSession sessionId: String, wantsPDF
                     }
                 })
             } else {
+                // TODO: destinationUrlString is /path/to/<sessionid>.mp4. It should be a directory to save the file in, and using the url as file name.
                 downloadWithYoutubeDl(url: urlVideo.absoluteString, in: destinationUrlString)
             }
         } else {
