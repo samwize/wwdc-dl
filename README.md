@@ -27,7 +27,7 @@ youtube-dl have the added benefits such as resuming downloads.
     # Download for specific session
     ./wwdc-dl -s 102,402
 
-By default, the script will download the SD video and PDF in your `~/Documents/WWDC-2016`.
+By default, the script will download the SD video and PDF in your `~/Documents/WWDC-2019`.
 
 ## Advanced Usage
 
