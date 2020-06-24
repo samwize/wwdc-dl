@@ -1,7 +1,7 @@
 
 import Foundation
 
-let currentYear = "2019"
+let currentYear = "2020"
 
 // http://stackoverflow.com/a/26135752/242682
 func htmlPage(withURL url: String) -> String? {
@@ -30,6 +30,47 @@ func matchesForRegexInText(_ regex: String!, text: String!) -> [String] {
     } catch let error as NSError {
         print("invalid regex: \(error.localizedDescription)")
         return []
+    }
+}
+
+
+public extension String {
+    /// Return the captured groups of the first matched regex pattern.
+    /// This is a simplified method for single regex matching. Use `capturedGroups` for multiple matches.
+    func capturedGroupsWithSingleMatch(regex pattern: String) -> [String] {
+        let results = capturedGroups(regex: pattern)
+        return results.first ?? []
+    }
+
+    /// Return array of matches, with array of captured groups.
+    /// Inner array are the captured groups, while outer array are the regex matches
+    func capturedGroups(regex pattern: String) -> [[String]] {
+        do {
+            let regex = try NSRegularExpression(pattern: pattern, options: [])
+            let results = regex.matches(in: self, options: [], range: NSRange(location:0, length: self.count))
+            return results.map {
+                capturedGroups(of: $0)
+            }
+        } catch {
+            return [[]]
+        }
+    }
+
+    /// Return array of captured groups as string, from a primitive `NSTextCheckingResult`.
+    /// `NSTextCheckingResult` has a perculiar way of storing the matched results:
+    /// Index 0 is the range of the whole string matched
+    /// Index 1..last are the ranges of the captured groups
+    func capturedGroups(of result: NSTextCheckingResult) -> [String] {
+        let lastRangeIndex = result.numberOfRanges - 1
+        guard lastRangeIndex >= 1 else { return [] }
+
+        var capturedGroups = [String]()
+        for i in 1...lastRangeIndex {
+            let capturedGroupIndex = result.range(at: i)
+            let capturedGroup = (self as NSString).substring(with: capturedGroupIndex)
+            capturedGroups.append(capturedGroup)
+        }
+        return capturedGroups
     }
 }
 
@@ -121,8 +162,12 @@ func shell(launchPath: String, arguments: [String]) -> String {
 }
 
 func downloadWithYoutubeDl(url: String, in directory: String) {
-    print("Using youtube-dl")
-    let result = shell(launchPath: "/usr/local/bin/youtube-dl", arguments: [url, "-o", directory])
+    let _directory = directory
+        .replacingOccurrences(of: "%20", with: "-")
+        .replacingOccurrences(of: ";", with: "")
+        .replacingOccurrences(of: ":", with: "")
+    print("Using youtube-dl.. output \(_directory)")
+     let result = shell(launchPath: "/usr/local/bin/youtube-dl", arguments: ["-o", "\(_directory)", url])
     print(result)
 }
 
@@ -146,6 +191,10 @@ func downloadSession(inYear year: String, forSession sessionId: String, wantsPDF
     let regexHls = "https://devstreaming-cdn.apple.com/videos/wwdc/\(year)/\(sessionId).*/\(sessionId).*.m3u8"
     
     switch year {
+    case "2020":
+        // "https://devstreaming-cdn.apple.com/videos/wwdc/2020/10097/2/CB3952FA-6597-441E-BC0A-81A7E0F00B65/wwdc2020_10097_hd.mp4?dl=1"
+        regexHD = "https://devstreaming-cdn.apple.com/videos/wwdc/\(year)/\(sessionId).*\(sessionId)_hd.mp4"
+        regexSD = "https://devstreaming-cdn.apple.com/videos/wwdc/\(year)/\(sessionId).*\(sessionId)_sd.mp4"
     case "2017", "2018", "2019":
         // https and cdn subdomain
         regexHD = regexHD.replacingOccurrences(of: "http://devstreaming.apple.com", with: "https://devstreaming-cdn.apple.com")
@@ -165,8 +214,16 @@ func downloadSession(inYear year: String, forSession sessionId: String, wantsPDF
         return
     }
 
-    let destinationUrl = wwdcDirectoryUrl.appendingPathComponent("\(sessionId).mp4")
-    let destinationUrlString = destinationUrl.absoluteString.replacingOccurrences(of: "file://", with: "")
+    var destinationUrl = wwdcDirectoryUrl.appendingPathComponent("\(sessionId).mp4")
+    var destinationUrlString = destinationUrl.absoluteString.replacingOccurrences(of: "file://", with: "")
+
+    let regexTitle = "data-video-name=\"(.*?)\""
+    let title = playPageHtml.capturedGroupsWithSingleMatch(regex: regexTitle).first
+    if let title = title {
+        print("Title: \(title)")
+        destinationUrl = wwdcDirectoryUrl.appendingPathComponent("\(sessionId)-\(title).mp4")
+        destinationUrlString = destinationUrl.absoluteString.replacingOccurrences(of: "file://", with: "")
+    }
 
     if wantsPDF {
         let matchesPDF = matchesForRegexInText(regexPDF, text: playPageHtml)
@@ -267,7 +324,7 @@ func findAllSessionIds(inYear year: String = currentYear) -> [String]? {
 // Sensible defaults
 var sessionIds = [String]()  // -s 123,456 or if nil, download all!
 var isDownloadAll = false // -a to download all
-var isVideoResolutionHD = false // -f HD
+var isVideoResolutionHD = true // -f HD (default), -f SD
 var wantsPDFOnly = false // --pdfonly
 var wantsPDF = true // --nopdf
 var directoryToSaveTo: String? = nil // nil will be user's Documents directory
@@ -292,8 +349,8 @@ for argument : String in dashedArguments {
         }
     }
     
-    if argument == "-f" && valueString == "HD" {
-        isVideoResolutionHD = true
+    if argument == "-f" && valueString == "SD" {
+        isVideoResolutionHD = false
     }
     
     if argument == "--nopdf" {
@@ -341,3 +398,10 @@ for sessionId in sessionIds {
 //downloadSession(inYear: "2016", forSession: "104", wantsPDF: false, wantsPDFOnly: false, isVideoResolutionHD: false, inDirectory: directoryToSaveTo)
 //downloadSession(inYear: "2017", forSession: "701", wantsPDF: true, wantsPDFOnly: false, isVideoResolutionHD: false, inDirectory: directoryToSaveTo) // HLS
 //downloadSession(inYear: "2018", forSession: "202", wantsPDF: true, wantsPDFOnly: false, isVideoResolutionHD: true, inDirectory: directoryToSaveTo, useYoutubeDl: true)
+
+// All 2020
+//if let ids = findAllSessionIds(inYear: "2020") {
+//    ids.forEach {
+//        downloadSession(inYear: "2020", forSession: $0, wantsPDF: true, wantsPDFOnly: false, isVideoResolutionHD: true, inDirectory: directoryToSaveTo, useYoutubeDl: true)
+//    }
+//}
