@@ -6,7 +6,7 @@ And is totally built with ~~Swift 3~~ Swift 4 scripts!
 
 _This started as a quick hack at 4am. [Read more](http://samwize.com/2016/06/16/swift-script-to-download-all-wwdc-2016-videos-and-pdfs-automatically/)._
 
-Works for **WWDC 2019**, all the way to WWDC 2014.
+Works for **WWDC 2020**, all the way to WWDC 2014.
 
 ## Setup youtube-dl
 
