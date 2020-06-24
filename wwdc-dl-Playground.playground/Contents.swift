@@ -76,14 +76,19 @@ public extension String {
 
 // http://stackoverflow.com/a/30106868/242682
 class HttpDownloader {
-    class func loadFileSync(_ url: URL, inDirectory directoryString: String?, inYear year: String, completion:(_ path: String?, _ error: NSError?) -> Void) {
+    class func loadFileSync(_ url: URL, inDirectory directoryString: String?, inYear year: String, filename: String? = nil, completion:(_ path: String?, _ error: NSError?) -> Void) {
 
         guard let wwdcDirectoryUrl = ensureWwdcDirectoryIsCreated(in: directoryString, year: year) else {
             print("Could not create WWDC directory")
             return
         }
 
-        let destinationUrl = wwdcDirectoryUrl.appendingPathComponent(url.lastPathComponent)
+        let destinationUrl: URL
+        if let filename = filename {
+            destinationUrl = wwdcDirectoryUrl.appendingPathComponent(filename)
+        } else {
+            destinationUrl = wwdcDirectoryUrl.appendingPathComponent(url.lastPathComponent)
+        }
 
         guard FileManager().fileExists(atPath: destinationUrl.path) == false else {
             let error = NSError(domain:"File already exists", code:800, userInfo:nil)
@@ -267,11 +272,15 @@ func downloadSession(inYear year: String, forSession sessionId: String, wantsPDF
         }
         
         if let urlVideo = urlVideo {
-            // Download direct
+            // Download
             print("Downloading from \(urlVideo). Please wait..")
 
             if !useYoutubeDl {
-                HttpDownloader.loadFileSync(urlVideo, inDirectory: directory, inYear: year, completion: { path, error in
+                var filename: String? = nil
+                if let title = title {
+                    filename = "\(sessionId)-\(title).mp4"
+                }
+                HttpDownloader.loadFileSync(urlVideo, inDirectory: directory, inYear: year, filename: filename, completion: { path, error in
                     if let error = error {
                         print("Error: \(error.localizedDescription)")
                     } else {
@@ -400,10 +409,11 @@ for sessionId in sessionIds {
 //downloadSession(inYear: "2016", forSession: "104", wantsPDF: false, wantsPDFOnly: false, isVideoResolutionHD: false, inDirectory: directoryToSaveTo)
 //downloadSession(inYear: "2017", forSession: "701", wantsPDF: true, wantsPDFOnly: false, isVideoResolutionHD: false, inDirectory: directoryToSaveTo) // HLS
 //downloadSession(inYear: "2018", forSession: "202", wantsPDF: true, wantsPDFOnly: false, isVideoResolutionHD: true, inDirectory: directoryToSaveTo, useYoutubeDl: true)
+//downloadSession(inYear: "2020", forSession: "10228", wantsPDF: true, wantsPDFOnly: false, isVideoResolutionHD: true, inDirectory: directoryToSaveTo, useYoutubeDl: false)
 
 // All 2020
-if let ids = findAllSessionIds(inYear: "2020") {
-    ids.forEach {
-        downloadSession(inYear: "2020", forSession: $0, wantsPDF: true, wantsPDFOnly: false, isVideoResolutionHD: true, inDirectory: directoryToSaveTo, useYoutubeDl: true)
-    }
-}
+//if let ids = findAllSessionIds(inYear: "2020") {
+//    ids.forEach {
+//        downloadSession(inYear: "2020", forSession: $0, wantsPDF: true, wantsPDFOnly: false, isVideoResolutionHD: true, inDirectory: directoryToSaveTo, useYoutubeDl: false)
+//    }
+//}
