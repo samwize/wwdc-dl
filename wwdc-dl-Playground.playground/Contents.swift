@@ -164,8 +164,10 @@ func shell(launchPath: String, arguments: [String]) -> String {
 func downloadWithYoutubeDl(url: String, in directory: String) {
     let _directory = directory
         .replacingOccurrences(of: "%20", with: "-")
-        .replacingOccurrences(of: ";", with: "")
+        .replacingOccurrences(of: "%E2%80%99", with: "") // ’
         .replacingOccurrences(of: ":", with: "")
+        .replacingOccurrences(of: ",", with: "")
+        .replacingOccurrences(of: "/", with: "")
     print("Using youtube-dl.. output \(_directory)")
      let result = shell(launchPath: "/usr/local/bin/youtube-dl", arguments: ["-o", "\(_directory)", url])
     print(result)
@@ -400,8 +402,8 @@ for sessionId in sessionIds {
 //downloadSession(inYear: "2018", forSession: "202", wantsPDF: true, wantsPDFOnly: false, isVideoResolutionHD: true, inDirectory: directoryToSaveTo, useYoutubeDl: true)
 
 // All 2020
-//if let ids = findAllSessionIds(inYear: "2020") {
-//    ids.forEach {
-//        downloadSession(inYear: "2020", forSession: $0, wantsPDF: true, wantsPDFOnly: false, isVideoResolutionHD: true, inDirectory: directoryToSaveTo, useYoutubeDl: true)
-//    }
-//}
+if let ids = findAllSessionIds(inYear: "2020") {
+    ids.forEach {
+        downloadSession(inYear: "2020", forSession: $0, wantsPDF: true, wantsPDFOnly: false, isVideoResolutionHD: true, inDirectory: directoryToSaveTo, useYoutubeDl: true)
+    }
+}

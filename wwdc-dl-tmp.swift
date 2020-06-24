@@ -165,8 +165,10 @@ func shell(launchPath: String, arguments: [String]) -> String {
 func downloadWithYoutubeDl(url: String, in directory: String) {
     let _directory = directory
         .replacingOccurrences(of: "%20", with: "-")
-        .replacingOccurrences(of: ";", with: "")
+        .replacingOccurrences(of: "%E2%80%99", with: "") // ’
         .replacingOccurrences(of: ":", with: "")
+        .replacingOccurrences(of: ",", with: "")
+        .replacingOccurrences(of: "/", with: "")
     print("Using youtube-dl.. output \(_directory)")
      let result = shell(launchPath: "/usr/local/bin/youtube-dl", arguments: ["-o", "\(_directory)", url])
     print(result)
