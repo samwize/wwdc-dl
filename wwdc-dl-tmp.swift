@@ -2,7 +2,7 @@
 
 import Foundation
 
-let currentYear = "2020"
+let currentYear = "2021"
 
 // http://stackoverflow.com/a/26135752/242682
 func htmlPage(withURL url: String) -> String? {
@@ -199,6 +199,10 @@ func downloadSession(inYear year: String, forSession sessionId: String, wantsPDF
     let regexHls = "https://devstreaming-cdn.apple.com/videos/wwdc/\(year)/\(sessionId).*/\(sessionId).*.m3u8"
     
     switch year {
+	case "2021":
+		// "https://devstreaming-cdn.apple.com/videos/wwdc/2021/10233/4/72F4F22E-DDAB-4A58-B049-7AC537198EFC/downloads/wwdc2021-10233_hd.mp4?dl=1"
+		regexHD = "https://devstreaming-cdn.apple.com/videos/wwdc/\(year)/\(sessionId)/.*/downloads/wwdc\(year)-\(sessionId)_hd.mp4"
+		regexSD = "https://devstreaming-cdn.apple.com/videos/wwdc/\(year)/\(sessionId)/.*/downloads/wwdc\(year)-\(sessionId)_sd.mp4"
     case "2020":
         // "https://devstreaming-cdn.apple.com/videos/wwdc/2020/10097/2/CB3952FA-6597-441E-BC0A-81A7E0F00B65/wwdc2020_10097_hd.mp4?dl=1"
         regexHD = "https://devstreaming-cdn.apple.com/videos/wwdc/\(year)/\(sessionId).*\(sessionId)_hd.mp4"
@@ -410,6 +414,7 @@ for sessionId in sessionIds {
 //downloadSession(inYear: "2016", forSession: "104", wantsPDF: false, wantsPDFOnly: false, isVideoResolutionHD: false, inDirectory: directoryToSaveTo)
 //downloadSession(inYear: "2017", forSession: "701", wantsPDF: true, wantsPDFOnly: false, isVideoResolutionHD: false, inDirectory: directoryToSaveTo) // HLS
 //downloadSession(inYear: "2018", forSession: "202", wantsPDF: true, wantsPDFOnly: false, isVideoResolutionHD: true, inDirectory: directoryToSaveTo, useYoutubeDl: true)
+//downloadSession(inYear: "2020", forSession: "10228", wantsPDF: true, wantsPDFOnly: false, isVideoResolutionHD: true, inDirectory: directoryToSaveTo, useYoutubeDl: false)
 
 // All 2020
 //if let ids = findAllSessionIds(inYear: "2020") {
@@ -417,4 +422,3 @@ for sessionId in sessionIds {
 //        downloadSession(inYear: "2020", forSession: $0, wantsPDF: true, wantsPDFOnly: false, isVideoResolutionHD: true, inDirectory: directoryToSaveTo, useYoutubeDl: false)
 //    }
 //}
-downloadSession(inYear: "2020", forSession: "10228", wantsPDF: true, wantsPDFOnly: false, isVideoResolutionHD: true, inDirectory: directoryToSaveTo, useYoutubeDl: false)
