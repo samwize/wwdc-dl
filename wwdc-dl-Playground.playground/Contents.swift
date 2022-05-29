@@ -399,7 +399,7 @@ for argument : String in dashedArguments {
 }
 
 if isDownloadAll {
-    sessionIds = findAllSessionIds()!
+    sessionIds = findAllSessionIds(inYear: year)!
 }
 
 for sessionId in sessionIds {
