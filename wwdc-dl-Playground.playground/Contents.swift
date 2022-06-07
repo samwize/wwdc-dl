@@ -406,9 +406,27 @@ if isDownloadAll {
     sessionIds = findAllSessionIds(inYear: year)!
 }
 
+let queue = DispatchQueue.global(qos: .background)
+let semaphore = DispatchSemaphore(value: 5)
+
+let group = DispatchGroup()
+
 for sessionId in sessionIds {
-    downloadSession(inYear: year, forSession: sessionId, wantsPDF: wantsPDF, wantsPDFOnly: wantsPDFOnly, isVideoResolutionHD: isVideoResolutionHD, inDirectory: directoryToSaveTo, useYoutubeDl: useYoutubeDl)
+    group.enter()
+    queue.async {
+        semaphore.wait()
+        
+
+        defer {
+            semaphore.signal()
+            group.leave()
+        }
+        
+        downloadSession(inYear: year, forSession: sessionId, wantsPDF: wantsPDF, wantsPDFOnly: wantsPDFOnly, isVideoResolutionHD: isVideoResolutionHD, inDirectory: directoryToSaveTo, useYoutubeDl: useYoutubeDl)
+    }
 }
+
+group.wait()
 
 // Test
 //findAllSessionIds()
