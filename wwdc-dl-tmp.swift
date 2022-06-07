@@ -2,7 +2,7 @@
 
 import Foundation
 
-let currentYear = "2021"
+let currentYear = "2022"
 
 // http://stackoverflow.com/a/26135752/242682
 func htmlPage(withURL url: String) -> String? {
@@ -199,6 +199,10 @@ func downloadSession(inYear year: String, forSession sessionId: String, wantsPDF
     let regexHls = "https://devstreaming-cdn.apple.com/videos/wwdc/\(year)/\(sessionId).*/\(sessionId).*.m3u8"
     
     switch year {
+    case "2025": fallthrough
+    case "2024": fallthrough
+    case "2023": fallthrough
+    case "2022": fallthrough
 	case "2021":
 		// "https://devstreaming-cdn.apple.com/videos/wwdc/2021/10233/4/72F4F22E-DDAB-4A58-B049-7AC537198EFC/downloads/wwdc2021-10233_hd.mp4?dl=1"
 		regexHD = "https://devstreaming-cdn.apple.com/videos/wwdc/\(year)/\(sessionId)/.*/downloads/wwdc\(year)-\(sessionId)_hd.mp4"
@@ -400,7 +404,7 @@ for argument : String in dashedArguments {
 }
 
 if isDownloadAll {
-    sessionIds = findAllSessionIds()!
+    sessionIds = findAllSessionIds(inYear: year)!
 }
 
 for sessionId in sessionIds {
