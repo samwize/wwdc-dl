@@ -237,7 +237,8 @@ func downloadSession(inYear year: String, forSession sessionId: String, wantsPDF
     let title = playPageHtml.capturedGroupsWithSingleMatch(regex: regexTitle).first
     if let title = title {
         print("Title: \(title)")
-        destinationUrl = wwdcDirectoryUrl.appendingPathComponent("\(sessionId)-\(title).mp4")
+        let normalizedTitle = title.replacingOccurrences(of: "/", with: "+", options: .literal, range: nil)
+        destinationUrl = wwdcDirectoryUrl.appendingPathComponent("\(sessionId)-\(normalizedTitle).mp4")
         destinationUrlString = destinationUrl.absoluteString.replacingOccurrences(of: "file://", with: "")
     }
 
@@ -287,7 +288,8 @@ func downloadSession(inYear year: String, forSession sessionId: String, wantsPDF
             if !useYoutubeDl {
                 var filename: String? = nil
                 if let title = title {
-                    filename = "\(sessionId)-\(title).mp4"
+                    let normalizedTitle = title.replacingOccurrences(of: "/", with: "+", options: .literal, range: nil)
+                    filename = "\(sessionId)-\(normalizedTitle).mp4"
                 }
                 HttpDownloader.loadFileSync(urlVideo, inDirectory: directory, inYear: year, filename: filename, completion: { path, error in
                     if let error = error {
