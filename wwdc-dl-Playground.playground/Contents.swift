@@ -407,16 +407,15 @@ if isDownloadAll {
     sessionIds = findAllSessionIds(inYear: year)!
 }
 
+let concurrentDownloads = 5
 let queue = DispatchQueue.global(qos: .background)
-let semaphore = DispatchSemaphore(value: 5)
-
+let semaphore = DispatchSemaphore(value: concurrentDownloads)
 let group = DispatchGroup()
 
 for sessionId in sessionIds {
     group.enter()
     queue.async {
         semaphore.wait()
-        
 
         defer {
             semaphore.signal()
