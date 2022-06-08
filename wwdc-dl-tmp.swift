@@ -86,7 +86,8 @@ class HttpDownloader {
 
         let destinationUrl: URL
         if let filename = filename {
-            destinationUrl = wwdcDirectoryUrl.appendingPathComponent(filename)
+            let sanitizedFilename = filename.replacingOccurrences(of: "/", with: ":", options: .literal, range: nil)
+            destinationUrl = wwdcDirectoryUrl.appendingPathComponent(sanitizedFilename)
         } else {
             destinationUrl = wwdcDirectoryUrl.appendingPathComponent(url.lastPathComponent)
         }
